@@ -272,6 +272,17 @@ class ModelData(object):
         ''' 为API构造数据 对fk/m2m字段单独进行了处理
         '''
         _meta = self.config.model_class._meta
+        # print('self.config.field_show_list', self.config.field_show_list)
+
+        # 整合field及@Property伪装的field
+        fields = {
+                _meta.get_field(k).name: (_meta.get_field(k).related_model._meta.verbose_name if isinstance(
+                    _meta.get_field(k), (ManyToManyRel, ManyToOneRel)) else _meta.get_field(k).verbose_name)
+                for k in self.config.field_show_list
+                if isinstance(k, str)
+            }
+        for x in self.config.property_show_list:
+            fields[x] = getattr(self.config.model_class, x).name
 
         rows = {
             'app': {
@@ -281,12 +292,7 @@ class ModelData(object):
             'name': _meta.model_name,
             'table': _meta.model_name,
             'label': _meta.verbose_name,
-            # 'fields': {
-            #     _meta.get_field(k).name: (_meta.get_field(k).related_model._meta.verbose_name if isinstance(
-            #         _meta.get_field(k), (ManyToManyRel, ManyToOneRel)) else _meta.get_field(k).verbose_name)
-            #     for k in self.list_display
-            #     if isinstance(k, str)
-            # },
+            'fields': fields,
             'items': self.get_items()
         }
         # logger.info('rows',

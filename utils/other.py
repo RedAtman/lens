@@ -1,9 +1,13 @@
-from django.apps import apps
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+import collections
 
 
 class ApiResponse(object):
-    """docstring for Response"""
+    '''lensAPI响应
+
+    Variables:
+        _status {dict} -- [description]
+        } {[type]} -- [description]
+    '''
     _status = {
         -1: '失败',
         0: '未知错误',
@@ -26,3 +30,20 @@ class ApiResponse(object):
         else:
             self.msg = msg or self._status.get(code)
         self.data = data
+
+
+class OrderedSet(collections.Set):
+    '''保持顺序的set
+    '''
+
+    def __init__(self, iterable=()):
+        self.d = collections.OrderedDict.fromkeys(iterable)
+
+    def __len__(self):
+        return len(self.d)
+
+    def __contains__(self, element):
+        return element in self.d
+
+    def __iter__(self):
+        return iter(self.d)

@@ -20,7 +20,7 @@ from django.core import serializers
 from django.forms.models import model_to_dict
 
 from lens import lens_settings, utils, api, schema
-from lens.utils import logger
+from lens.utils import logger, decorator
 from lens.settings import perform_import
 
 
@@ -117,18 +117,27 @@ class ModelConfig(object):
     def _classify_fields(self):
         '''分拣field与property
         '''
-        # 差集: 剔除配置中禁止显示的field
-        field_show_list = set(self.field_show_list) - set(self.field_hide_list)
+        # 若未定义则默认显示所有field和property
+        if not self.field_show_list:
+            field_list = [i.name for i in self.model_class._meta.get_fields()]
+            property_list = [i for i in dir(self.model_class) if isinstance(getattr(self.model_class, i), decorator.Property)]
+            self.field_show_list = field_list + property_list
+        # print('self.field_show_list', self.field_show_list)
+
+        # 差集: 剔除配置中禁止显示的field 并使用utils.OrderedSet保持set差集的顺序
+        field_show_list = list(utils.OrderedSet(self.field_show_list) - utils.OrderedSet(self.field_hide_list))
+        # print('field_show_list', field_show_list)
 
         # 分拣field与property
         self.field_show_list = []
         self.property_show_list = []
         for field in field_show_list:
-            f = getattr(self.model_class, field)
-            if isinstance(f, DeferredAttribute):
-                self.field_show_list.append(field)
-            elif isinstance(f, property):
-                self.property_show_list.append(field)
+            if hasattr(self.model_class, field): # 这里避开了外键类型的字段 有优化空间
+                f = getattr(self.model_class, field)
+                if isinstance(f, DeferredAttribute):
+                    self.field_show_list.append(field)
+                elif isinstance(f, decorator.Property):
+                    self.property_show_list.append(field)
 
     def _build_field_class_list(self):
         '''生成model的字段类列表
