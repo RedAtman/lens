@@ -3,6 +3,7 @@ import json
 import re
 # from types import FunctionType
 import traceback
+import copy
 
 from django.conf.urls import url
 # from django.utils.safestring import mark_safe
@@ -16,6 +17,7 @@ from django.db.models import Q, Avg, Max, Min, Count, Field
 from django.db.models.fields.related import ForeignKey, ManyToManyField
 from django.db.models.fields.reverse_related import ManyToOneRel, ManyToManyRel
 from django.db.models.query_utils import DeferredAttribute
+from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
 from django.core import serializers
 from django.forms.models import model_to_dict
 
@@ -113,6 +115,7 @@ class ModelConfig(object):
         # print('field_show_list', self.field_show_list)
         # print('property_show_list', self.property_show_list)
         # print('field_class_list', self.field_class_list)
+        # print('field_name_list', self.field_name_list)
 
     def _classify_fields(self):
         '''分拣field与property
@@ -131,10 +134,11 @@ class ModelConfig(object):
         # 分拣field与property
         self.field_show_list = []
         self.property_show_list = []
+        local_fields_name = [f.name for f in self.model_class._meta.local_fields]
         for field in field_show_list:
-            if hasattr(self.model_class, field): # 这里避开了外键类型的字段 有优化空间
+            if field in local_fields_name:
                 f = getattr(self.model_class, field)
-                if isinstance(f, DeferredAttribute):
+                if isinstance(f, (DeferredAttribute, ForwardManyToOneDescriptor)): # 这里只包含了本地、外键类型的字段 有优化空间
                     self.field_show_list.append(field)
                 elif isinstance(f, decorator.Property):
                     self.property_show_list.append(field)
@@ -142,7 +146,7 @@ class ModelConfig(object):
     def _build_field_class_list(self):
         '''生成model的字段类列表
         '''
-        self.field_class_list = [field for field in self.model_class._meta.get_fields() if field.name in self.field_show_list]
+        self.field_class_list = [field for field in self.model_class._meta.local_fields if field.name in self.field_show_list]
 
     def _build_field_name_list(self):
         ''' 获取model的字段类名列表
@@ -547,17 +551,20 @@ class ModelConfig(object):
                             # obj.__dict__.update(**request.data)
                             # obj.save()
 
-                            AddModelForm = self.get_model_form_class()
+                            # 将请求中未指定的字段 赋值为obj原来的数据 以避免form的更新模式将其覆盖为None
+                            data = copy.copy(request.data)
                             for k,v in forms.models.model_to_dict(obj).items():
-                                if k not in request.data: request.data[k] = v
-                            form = AddModelForm(data=request.data, instance=obj)
-                            if form.is_valid():
-                                form.save(commit=False)
-                                utils.valid_after.send(sender=self.model_class, request=request, instance=obj)
-                                obj = form.save()
-                                utils.patch_save.send(sender=self.model_class, request=request, instance=obj)
+                                if k not in data: data[k] = v
 
-                                data = json.loads(serializers.serialize('json',[obj])[1:-1])
+                            AddModelForm = self.get_model_form_class()
+                            form = AddModelForm(data=data, instance=obj)
+                            if form.is_valid():
+                                instance = form.save(commit=False)
+                                utils.valid_after.send(sender=self.model_class, request=request, instance=instance)
+                                instance.save()
+                                utils.patch_save.send(sender=self.model_class, request=request, instance=instance)
+
+                                data = json.loads(serializers.serialize('json',[instance])[1:-1])
                                 msg = '更新成功'
                                 code = 1
                                 # self.hook_patch_after(request, pk=pk)
