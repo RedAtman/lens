@@ -1,10 +1,8 @@
 import logging
 import logging.handlers
-import sys
 import os
+import sys
 import time
-
-
 # 重写log的msg打印
 from logging import LogRecord
 
@@ -27,8 +25,8 @@ def getMessage(self):
 setattr(LogRecord, 'getMessage', getMessage)
 
 
-import traceback
 import io
+import traceback
 from logging import _srcfile
 
 

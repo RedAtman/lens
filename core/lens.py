@@ -1,39 +1,33 @@
+import copy
 import functools
 import json
-import re
 # from types import FunctionType
 import traceback
-import copy
 
-from django.conf.urls import url
-# from django.utils.safestring import mark_safe
-# from django.shortcuts import HttpResponse, render, redirect
-from django.http import QueryDict, JsonResponse
-from django.http.request import HttpRequest
 # from django.http import FileResponse
 # from django.urls import reverse
 from django import forms
-from django.db.models import Q, Avg, Max, Min, Count, Field
-from django.db.models.fields.related import ForeignKey, ManyToManyField
-from django.db.models.fields.reverse_related import ManyToOneRel, ManyToManyRel
-from django.db.models.query_utils import DeferredAttribute
-from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
-from django.core import serializers
-from django.forms.models import model_to_dict
-
-from lens import lens_settings, utils, api, schema
-from lens.utils import logger, decorator
-from lens.settings import perform_import
-
-
 # 生产环境请将settings中的DEBUG设置为False 部分不安全的接口与测试功能将关闭
 from django.conf import settings
-
+from django.conf.urls import url
+from django.core import serializers
+from django.db.models import Max, Min, Q
+from django.db.models.fields.related import ForeignKey, ManyToManyField
+from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+from django.db.models.fields.reverse_related import ManyToManyRel, ManyToOneRel
+from django.db.models.query_utils import DeferredAttribute
+# from django.utils.safestring import mark_safe
+# from django.shortcuts import HttpResponse, render, redirect
+from django.http import JsonResponse, QueryDict
+from django.http.request import HttpRequest
+from lens import api, lens_settings, utils
+from lens.settings import perform_import
+from lens.utils import decorator, logger
 
 # 根据DEBUG切换开发/生产环境下被允许的请求方法
 if settings.DEBUG:
     ACCEPT_REQUEST_METHOD = [
-        'GET', 'POST', 
+        'GET', 'POST',
         'PATCH', 'DELETE'
     ]
 else:
@@ -41,9 +35,9 @@ else:
 
 # 允许的聚合查询
 ACCEPT_AGGREGATE = {
-    # 'avg': Avg, 
-    'max': Max, 
-    'min': Min, 
+    # 'avg': Avg,
+    'max': Max,
+    'min': Min,
     # 'count': Count
 }
 
@@ -193,7 +187,7 @@ class ModelConfig(object):
                     # print('_field',
                     #     field,
                         # type(_field),
-                        # _field, 
+                        # _field,
                         # _field.target_field,
                         # dir(_field.target_field),
                         # _field.target_field.name,
@@ -233,15 +227,15 @@ class ModelConfig(object):
 
     def get_model_data(self, request, pk=None, pagination=True):
         '''[summary]
-        
+
         [description]
-        
+
         Arguments:
             request {[type]} -- [description]
-        
+
         Keyword Arguments:
             pagination {bool} -- [是否分页] (default: {True})
-        
+
         Returns:
             [type] -- [description]
         '''
@@ -317,7 +311,7 @@ class ModelConfig(object):
                 # error_messages ={
                 #     "facilityName":{"required":"必填","invalid":"格式错误"}  ##自定义错误提示
                 # }
-        
+
             def __init__(self, *args, **kwargs):
                 super(AddModelForm, self).__init__(*args, **kwargs)
                 # name, field = list(self.fields.items())[0]
@@ -339,13 +333,13 @@ class ModelConfig(object):
 
     def gen_request_data(self, request, pk):
         '''解析请求信息为dict并挂载到request.data
-        
+
         [description]
-        
+
         Arguments:
             request {[type]} -- [description]
             pk {int / string} -- 主键值
-        
+
         Raises:
             Exception -- [description]
         '''
@@ -384,7 +378,7 @@ class ModelConfig(object):
                 # 根据content_type解析请求数据为dict
                 if request.content_type in ['application/json', 'text/plain']:
                     request.data = body
-                
+
                 elif request.content_type in ['multipart/form-data']:
                     # 转换form-data类型数据为dict
                     from django.http.multipartparser import MultiPartParser
@@ -444,11 +438,11 @@ class ModelConfig(object):
         POST: 添加一条数据, 若request中含pk值则忽略pk值
         PATCH: 更新一条数据, 需指定pk值
         DELETE: 删除一条数据, 需指定pk值
-        
+
         Arguments:
             request {[type]} -- [description]
             pk {int / string} -- 单条数据操作时所需要的主键值
-        
+
         Returns:
             [type] -- [description]
         """
@@ -465,7 +459,7 @@ class ModelConfig(object):
         msg = None
         data = {}
         # print(
-        #     'request', 
+        #     'request',
         #     request.method,
         #     request.content_type,
         #     request.content_params,
@@ -473,7 +467,7 @@ class ModelConfig(object):
         #     request.data,
         #     )
 
-            
+
         try:
             # 解析请求信息为dict并挂载到request.data
             self.gen_request_data(request, pk)
@@ -518,7 +512,7 @@ class ModelConfig(object):
                 data[e.__class__.__name__] = str(e)
                 data['Traceback'] = str(traceback.format_exc())
 
-        
+
         elif request.method in ['GET', 'PATCH', 'DELETE',]:
             if request.method == 'GET':
                 try:
@@ -764,12 +758,12 @@ class ModelAdmin(object):
 
     def register(self, model_class, model_config=None):
         """将model和model的config类对应起来, 封装到admin对象（单例模式）中
-        
+
         [description]
-        
+
         Arguments:
             model_class {Model} -- 单个model表类
-        
+
         Keyword Arguments:
             model_config {ModelConfig} -- 与model表类对应的ModelConfig配置类 (default: {None})
         """

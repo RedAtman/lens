@@ -1,4 +1,3 @@
-from lens.utils import logger, ApiResponse
 from lens import lens_settings
 
 

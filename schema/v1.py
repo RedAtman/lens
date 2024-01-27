@@ -1,9 +1,6 @@
 # from lens.schema.app import AppSchema, ModelSchema
 
-from django.conf import settings
 from django.apps import apps
-
-from lens import utils
 from lens.utils import logger
 
 __all__ = ['Apps', 'Models', 'Model']
@@ -131,14 +128,10 @@ class Models(BaseSchema):
 import datetime
 
 from django.apps import apps
-from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
-from django.forms import ModelForm, DateTimeField
-from django.http import JsonResponse
-from django.views.generic import TemplateView
 from django.db.models.fields.related import ForeignKey
-from django.db.models.fields.reverse_related import ForeignObjectRel, ManyToManyRel, ManyToOneRel, OneToOneRel
-
+from django.db.models.fields.reverse_related import ForeignObjectRel
+from django.forms import DateTimeField, ModelForm
 
 MAPPING_FIELDS = {
     "AutoField": {

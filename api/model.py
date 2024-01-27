@@ -1,10 +1,7 @@
 from django.db.models import Field
-from django.db.models.fields.related import ForeignKey, ManyToManyField, OneToOneField
+from django.db.models.fields.related import ForeignKey, ManyToManyField
 from django.db.models.fields.reverse_related import ForeignObjectRel, ManyToManyRel, ManyToOneRel, OneToOneRel
 from django.forms.models import model_to_dict
-
-from lens.utils import logger
-
 
 # class ModelAPI(APIView):
 #     """docstring for ModelAPI"""

@@ -1,7 +1,8 @@
-from django.db import transaction
 # DJANGO_SETTINGS_MODULE = 'app.settings'
 # from django.middleware.transaction import TransactionMiddleware
 from django.conf import settings
+from django.db import transaction
+
 settings.configure()
 settings.DATABASES = {
     'default': {

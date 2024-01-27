@@ -1,5 +1,5 @@
 import time
-import functools
+
 from lens.utils import logger
 
 __all__ = [

@@ -1,17 +1,17 @@
-from urllib.parse import urlencode
+
 
 class Pagination(object):
     def __init__(self, current_page, all_count, base_url,query_params, per_page=10, pager_page_count=11):
         """分页组件初始化
-        
+
         [description]
-        
+
         Arguments:
             current_page {integer} -- 当前页码
             all_count {integer} -- 数据库中总条数
             base_url {string} -- 基础URL
             query_params {QueryDict} -- 内部含所有当前URL的原条件
-        
+
         Keyword Arguments:
             per_page {number} -- 每页显示数据条数 (default: {10})
             pager_page_count {number} -- 页面上最多显示的页码数量 (default: {11})
